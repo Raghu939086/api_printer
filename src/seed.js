@@ -45,9 +45,9 @@ const SOURCE_DIRS = (process.env.SEED_SOURCE_DIR
 const FORCE = process.argv.includes('--force');
 
 const ADMIN = {
-  name: 'Seed Admin',
-  email: 'admin@applications.local',
-  password: 'ChangeMe123!' // 12+ chars; change after first login
+  name: 'Admin',
+  email: 'admin@gmail.com',
+  password: 'Admin@12345' // change after first login
 };
 
 const CATEGORIES = [

@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Applications Admin</title>
+<style>
+:root{--brand:#0a9f57;--brand-dark:#087b45;--ink:#10231c;--muted:#5a6f66;--line:#e3ece7;--bg:#f6f8f7;--surface:#fff;--danger:#b42318;--shadow:0 18px 50px rgba(20,58,43,.08)}
+*{box-sizing:border-box}
+body{margin:0;font-family:Inter,Segoe UI,Arial,sans-serif;color:var(--ink);background:
+ radial-gradient(1000px 600px at 20% -10%,#d7f5e4 0%,transparent 55%),
+ radial-gradient(900px 600px at 90% 0%,#dbe8ff 0%,transparent 55%),
+ linear-gradient(180deg,#f8fbf9 0%,#eef4f0 100%);min-height:100vh}
+.top{height:60px;background:rgba(255,255,255,.92);backdrop-filter:blur(16px);border-bottom:1px solid var(--line);padding:0 22px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:5}
+.brand{display:flex;align-items:center;gap:10px;font-size:17px;font-weight:900}
+.brand-mark{width:34px;height:34px;border-radius:9px;background:var(--ink);color:#fff;display:grid;place-items:center}
+.wrap{max-width:1050px;margin:0 auto;padding:24px 16px 60px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:22px;box-shadow:var(--shadow);margin-bottom:22px}
+h1{font-size:22px;margin:0 0 4px}
+h2{font-size:16px;margin:0 0 16px}
+.muted{color:var(--muted);font-size:13px}
+label{display:block;font-size:12px;font-weight:800;margin:14px 0 6px;color:#34463d}
+input,select,textarea{width:100%;padding:11px 13px;border:1px solid var(--line);border-radius:10px;font-size:14px;font-family:inherit;background:#fff}
+textarea{resize:vertical;min-height:62px}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.btn{font-size:14px;font-weight:800;padding:12px 18px;border-radius:10px;border:0;cursor:pointer;color:#fff;background:var(--brand)}
+.btn:hover{background:var(--brand-dark)}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.btn-ghost{background:#f0f5f2;color:var(--ink);border:1px solid var(--line)}
+.btn-danger{background:#fff;color:var(--danger);border:1px solid #f0c7c2;padding:7px 12px;font-size:12px;border-radius:8px}
+.btn-danger:hover{background:#fdecea}
+.msg{min-height:20px;font-size:13px;font-weight:700;margin-top:12px}
+.msg.err{color:var(--danger)}.msg.ok{color:#0a5c38}
+.login{max-width:420px;margin:60px auto}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th,td{text-align:left;padding:10px 8px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-size:11px;letter-spacing:.5px;text-transform:uppercase;color:#8a978f}
+.tag{display:inline-block;font-size:11px;font-weight:700;color:var(--brand-dark);background:#eaf9f1;border:1px solid #bfe3ce;padding:2px 8px;border-radius:20px;margin:2px 3px 0 0}
+.pill{font-size:11px;font-weight:800;padding:3px 9px;border-radius:20px}
+.pill.on{color:#0a5c38;background:#eaf9f1;border:1px solid #bfe3ce}
+.pill.off{color:#8a5a00;background:#fff6e5;border:1px solid #f0dcae}
+a.filelink{color:var(--brand-dark);font-weight:700;text-decoration:none}
+.hidden{display:none}
+.hint{font-size:11px;color:var(--muted);margin-top:4px}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="brand"><div class="brand-mark">A</div><div>Applications Admin</div></div>
+  <button class="btn btn-ghost hidden" id="logoutBtn" onclick="logout()" style="padding:8px 14px;font-size:13px">Log out</button>
+</header>
+
+<!-- LOGIN -->
+<div class="wrap" id="loginView">
+  <div class="card login">
+    <h1>Admin login</h1>
+    <p class="muted">Sign in with an admin account to manage application forms.</p>
+    <label>Email</label>
+    <input id="email" type="email" placeholder="admin@gmail.com" autocomplete="username">
+    <label>Password</label>
+    <input id="password" type="password" placeholder="Your password" autocomplete="current-password" onkeydown="if(event.key==='Enter')login()">
+    <div style="margin-top:16px"><button class="btn" id="loginBtn" onclick="login()" style="width:100%">Sign in</button></div>
+    <div class="msg" id="loginMsg"></div>
+  </div>
+</div>
+
+<!-- DASHBOARD -->
+<div class="wrap hidden" id="dashView">
+  <!-- Add form -->
+  <div class="card">
+    <h2>➕ Add an application form</h2>
+    <label>PDF file</label>
+    <input id="file" type="file" accept="application/pdf">
+    <div class="row">
+      <div>
+        <label>Title</label>
+        <input id="title" placeholder="e.g. Passport Application Form">
+      </div>
+      <div>
+        <label>Form type</label>
+        <select id="formType">
+          <option value="downloadable">downloadable</option>
+          <option value="both" selected>both</option>
+          <option value="fillable">fillable</option>
+        </select>
+      </div>
+    </div>
+    <div class="row">
+      <div>
+        <label>Category</label>
+        <select id="category"></select>
+      </div>
+      <div>
+        <label>…or new category</label>
+        <input id="newCategory" placeholder="Type to create a new one">
+        <div class="hint">If filled, a new category is created and used.</div>
+      </div>
+    </div>
+    <label>Description</label>
+    <textarea id="description" placeholder="Short description shown to users"></textarea>
+    <label>Tags (comma-separated)</label>
+    <input id="tags" placeholder="e.g. passport, travel, 2026">
+    <div style="margin-top:18px"><button class="btn" id="addBtn" onclick="addForm()">Publish form</button></div>
+    <div class="msg" id="addMsg"></div>
+  </div>
+
+  <!-- List -->
+  <div class="card">
+    <h2 style="display:flex;justify-content:space-between;align-items:center">
+      <span>📄 Published forms</span>
+      <button class="btn btn-ghost" onclick="loadForms()" style="padding:7px 12px;font-size:12px">↻ Refresh</button>
+    </h2>
+    <div id="formsArea"><p class="muted">Loading…</p></div>
+  </div>
+</div>
+
+<script>
+const API = '';                 // same origin as this page
+let TOKEN = localStorage.getItem('admintoken') || '';
+
+function headers(json){
+  const h = { 'Authorization': 'Bearer ' + TOKEN };
+  if(json) h['Content-Type'] = 'application/json';
+  return h;
+}
+function esc(s){return (s||'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
+function show(view){
+  document.getElementById('loginView').classList.toggle('hidden', view!=='login');
+  document.getElementById('dashView').classList.toggle('hidden', view!=='dash');
+  document.getElementById('logoutBtn').classList.toggle('hidden', view!=='dash');
+}
+
+async function login(){
+  const email = document.getElementById('email').value.trim();
+  const password = document.getElementById('password').value;
+  const msg = document.getElementById('loginMsg'); msg.className='msg';
+  const btn = document.getElementById('loginBtn');
+  if(!email || !password){ msg.className='msg err'; msg.textContent='Enter email and password.'; return; }
+  btn.disabled=true; btn.textContent='Signing in…';
+  try{
+    const res = await fetch(API+'/api/auth/login', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({email,password})});
+    const json = await res.json();
+    if(!json.success) throw new Error(json.message || 'Login failed');
+    if(json.data.user.role !== 'admin') throw new Error('This account is not an admin.');
+    TOKEN = json.data.token; localStorage.setItem('admintoken', TOKEN);
+    enterDashboard();
+  }catch(e){ msg.className='msg err'; msg.textContent=e.message; }
+  finally{ btn.disabled=false; btn.textContent='Sign in'; }
+}
+
+function logout(){ TOKEN=''; localStorage.removeItem('admintoken'); show('login'); }
+
+async function enterDashboard(){
+  show('dash');
+  await loadCategories();
+  await loadForms();
+}
+
+async function loadCategories(){
+  const sel = document.getElementById('category');
+  try{
+    const res = await fetch(API+'/api/categories');
+    const json = await res.json();
+    const cats = json.data || [];
+    sel.innerHTML = cats.map(c=>'<option value="'+c._id+'">'+esc(c.name)+'</option>').join('')
+      || '<option value="">(no categories — type a new one →)</option>';
+  }catch(e){ sel.innerHTML='<option value="">(failed to load)</option>'; }
+}
+
+async function ensureCategoryId(){
+  const newName = document.getElementById('newCategory').value.trim();
+  if(!newName) return document.getElementById('category').value;
+  // Create a new category, then use its id.
+  const res = await fetch(API+'/api/categories', {method:'POST', headers:headers(true), body:JSON.stringify({name:newName})});
+  const json = await res.json();
+  if(!json.success) throw new Error(json.message || 'Could not create category');
+  return json.data._id;
+}
+
+async function addForm(){
+  const msg = document.getElementById('addMsg'); msg.className='msg';
+  const btn = document.getElementById('addBtn');
+  const file = document.getElementById('file').files[0];
+  const title = document.getElementById('title').value.trim();
+  if(!file){ msg.className='msg err'; msg.textContent='Choose a PDF file.'; return; }
+  if(!title){ msg.className='msg err'; msg.textContent='Enter a title.'; return; }
+
+  btn.disabled=true; btn.textContent='Publishing…';
+  try{
+    const categoryId = await ensureCategoryId();
+    if(!categoryId) throw new Error('Pick or create a category.');
+    const tags = document.getElementById('tags').value.split(',').map(t=>t.trim()).filter(Boolean);
+    const fd = new FormData();
+    fd.append('file', file);
+    fd.append('title', title);
+    fd.append('category', categoryId);
+    fd.append('formType', document.getElementById('formType').value);
+    fd.append('description', document.getElementById('description').value.trim());
+    fd.append('tags', JSON.stringify(tags));
+    const res = await fetch(API+'/api/forms', {method:'POST', headers:{'Authorization':'Bearer '+TOKEN}, body:fd});
+    const json = await res.json();
+    if(!json.success){ if(res.status===401){ logout(); } throw new Error(json.message || 'Publish failed'); }
+    msg.className='msg ok'; msg.textContent='✓ Published: '+json.data.title;
+    // reset
+    document.getElementById('file').value=''; document.getElementById('title').value='';
+    document.getElementById('description').value=''; document.getElementById('tags').value='';
+    document.getElementById('newCategory').value='';
+    await loadCategories(); await loadForms();
+  }catch(e){ msg.className='msg err'; msg.textContent='⚠️ '+e.message; }
+  finally{ btn.disabled=false; btn.textContent='Publish form'; }
+}
+
+async function loadForms(){
+  const area = document.getElementById('formsArea');
+  area.innerHTML = '<p class="muted">Loading…</p>';
+  try{
+    const res = await fetch(API+'/api/forms?limit=100', {headers:headers()});
+    const json = await res.json();
+    const forms = json.data || [];
+    if(!forms.length){ area.innerHTML='<p class="muted">No forms yet.</p>'; return; }
+    area.innerHTML = '<table><thead><tr><th>Title</th><th>Category</th><th>Tags</th><th>Status</th><th>File</th><th></th></tr></thead><tbody>'
+      + forms.map(f=>{
+        const cat = f.category && f.category.name ? esc(f.category.name) : '—';
+        const tags = (f.tags||[]).map(t=>'<span class="tag">'+esc(t)+'</span>').join('') || '—';
+        const status = f.isActive ? '<span class="pill on">active</span>' : '<span class="pill off">inactive</span>';
+        const file = f.fileUrl ? '<a class="filelink" href="'+esc(f.fileUrl)+'" target="_blank">open</a>' : '—';
+        return '<tr>'
+          + '<td><strong>'+esc(f.title)+'</strong><div class="muted">'+esc(f.description||'')+'</div></td>'
+          + '<td>'+cat+'</td><td>'+tags+'</td><td>'+status+'</td><td>'+file+'</td>'
+          + '<td><button class="btn-danger" onclick="delForm(\''+f._id+'\',\''+esc(f.title).replace(/\\\'/g,"")+'\')">Delete</button></td>'
+          + '</tr>';
+      }).join('') + '</tbody></table>';
+  }catch(e){ area.innerHTML='<p class="msg err">'+esc(e.message)+'</p>'; }
+}
+
+async function delForm(id, title){
+  if(!confirm('Delete "'+title+'"? This removes the form and its PDF.')) return;
+  try{
+    const res = await fetch(API+'/api/forms/'+id, {method:'DELETE', headers:headers()});
+    const json = await res.json();
+    if(!json.success){ if(res.status===401){ logout(); } throw new Error(json.message || 'Delete failed'); }
+    await loadForms();
+  }catch(e){ alert(e.message); }
+}
+
+// On load: if we already have a token, verify it; else show login.
+(async function(){
+  if(TOKEN){
+    try{
+      const res = await fetch(API+'/api/auth/me', {headers:headers()});
+      const json = await res.json();
+      if(json.success && json.data.role==='admin'){ enterDashboard(); return; }
+    }catch(e){}
+    TOKEN=''; localStorage.removeItem('admintoken');
+  }
+  show('login');
+})();
+</script>
+</body>
+</html>

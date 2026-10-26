@@ -31,6 +31,9 @@ if (process.env.NODE_ENV !== 'test') app.use(morgan('dev'));
 app.use('/api', rateLimit({ windowMs: 15 * 60 * 1000, limit: 300, standardHeaders: 'draft-7', legacyHeaders: false }));
 
 app.get('/health', (_req, res) => res.json({ success: true, message: 'Applications API is healthy' }));
+
+// Admin frontend (static page, same-origin with the API).
+app.get(['/admin', '/admin.html'], (_req, res) => res.sendFile(path.resolve(process.cwd(), 'public', 'admin.html')));
 app.use('/uploads', express.static(path.resolve(process.cwd(), 'uploads'), {
   dotfiles: 'deny',
   index: false,
