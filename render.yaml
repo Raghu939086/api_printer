@@ -1,0 +1,22 @@
+services:
+  - type: web
+    name: applications-backend
+    runtime: node
+    plan: free
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: JWT_EXPIRES_IN
+        value: 8h
+      - key: MAX_FILE_SIZE_MB
+        value: "10"
+      # Secrets — set these in the Render dashboard (Environment tab), not here:
+      - key: MONGODB_URI
+        sync: false
+      - key: JWT_SECRET
+        sync: false
+      - key: CORS_ORIGIN
+        sync: false
