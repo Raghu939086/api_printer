@@ -16,7 +16,7 @@ const app = express();
 app.disable('x-powered-by');
 app.use(helmet({ crossOriginResourcePolicy: { policy: 'cross-origin' } }));
 
-const origins = (process.env.CORS_ORIGIN || 'http://localhost:3000,http://localhost:5173')
+const origins = (process.env.CORS_ORIGIN || 'http://localhost:3000,http://localhost:5173,https://admin-printer.netlify.app')
   .split(',').map((s) => s.trim()).filter(Boolean);
 app.use(cors({
   origin(origin, callback) {
