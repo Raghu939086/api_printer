@@ -42,11 +42,19 @@ th{font-size:11px;letter-spacing:.5px;text-transform:uppercase;color:#8a978f}
 a.filelink{color:var(--brand-dark);font-weight:700;text-decoration:none}
 .hidden{display:none}
 .hint{font-size:11px;color:var(--muted);margin-top:4px}
+.tabs{display:flex;gap:6px}
+.tab{font-size:13px;font-weight:800;padding:8px 14px;border-radius:10px;border:1px solid transparent;background:transparent;color:var(--muted);cursor:pointer}
+.tab:hover{background:#f0f5f2;color:var(--ink)}
+.tab.active{background:#eaf9f1;color:var(--brand-dark);border-color:#bfe3ce}
 </style>
 </head>
 <body>
 <header class="top">
   <div class="brand"><div class="brand-mark">A</div><div>Applications Admin</div></div>
+  <nav class="tabs hidden" id="tabs">
+    <button class="tab active" id="tabUpload" onclick="switchTab('upload')">⬆️ Admin upload</button>
+    <button class="tab" id="tabPdfs" onclick="switchTab('pdfs')">📄 Uploaded PDFs</button>
+  </nav>
   <button class="btn btn-ghost hidden" id="logoutBtn" onclick="logout()" style="padding:8px 14px;font-size:13px">Log out</button>
 </header>
 
@@ -66,52 +74,47 @@ a.filelink{color:var(--brand-dark);font-weight:700;text-decoration:none}
 
 <!-- DASHBOARD -->
 <div class="wrap hidden" id="dashView">
-  <!-- Add form -->
-  <div class="card">
-    <h2>➕ Add an application form</h2>
-    <label>PDF file</label>
-    <input id="file" type="file" accept="application/pdf">
-    <div class="row">
-      <div>
-        <label>Title</label>
-        <input id="title" placeholder="e.g. Passport Application Form">
+
+  <!-- PAGE 1: ADMIN UPLOAD -->
+  <div id="uploadView">
+    <div class="card">
+      <h2>⬆️ Admin upload</h2>
+      <label>Document (PDF or Word)</label>
+      <input id="file" type="file" accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document">
+      <div class="hint">PDF files are stored as-is. Word documents (.doc, .docx) are automatically converted to PDF.</div>
+      <div class="row">
+        <div>
+          <label>Title</label>
+          <input id="title" placeholder="e.g. Passport Application Form">
+        </div>
+        <div>
+          <label>Category</label>
+          <select id="category"></select>
+        </div>
       </div>
-      <div>
-        <label>Form type</label>
-        <select id="formType">
-          <option value="downloadable">downloadable</option>
-          <option value="both" selected>both</option>
-          <option value="fillable">fillable</option>
-        </select>
-      </div>
+      <label>…or new category</label>
+      <input id="newCategory" placeholder="Type to create a new one">
+      <div class="hint">If filled, a new category is created and used.</div>
+      <label>Description</label>
+      <textarea id="description" placeholder="Short description shown to users"></textarea>
+      <label>Tags (comma-separated)</label>
+      <input id="tags" placeholder="e.g. passport, travel, 2026">
+      <div style="margin-top:18px"><button class="btn" id="addBtn" onclick="addForm()">Upload &amp; publish</button></div>
+      <div class="msg" id="addMsg"></div>
     </div>
-    <div class="row">
-      <div>
-        <label>Category</label>
-        <select id="category"></select>
-      </div>
-      <div>
-        <label>…or new category</label>
-        <input id="newCategory" placeholder="Type to create a new one">
-        <div class="hint">If filled, a new category is created and used.</div>
-      </div>
-    </div>
-    <label>Description</label>
-    <textarea id="description" placeholder="Short description shown to users"></textarea>
-    <label>Tags (comma-separated)</label>
-    <input id="tags" placeholder="e.g. passport, travel, 2026">
-    <div style="margin-top:18px"><button class="btn" id="addBtn" onclick="addForm()">Publish form</button></div>
-    <div class="msg" id="addMsg"></div>
   </div>
 
-  <!-- List -->
-  <div class="card">
-    <h2 style="display:flex;justify-content:space-between;align-items:center">
-      <span>📄 Published forms</span>
-      <button class="btn btn-ghost" onclick="loadForms()" style="padding:7px 12px;font-size:12px">↻ Refresh</button>
-    </h2>
-    <div id="formsArea"><p class="muted">Loading…</p></div>
+  <!-- PAGE 2: UPLOADED PDFS -->
+  <div id="pdfsView" class="hidden">
+    <div class="card">
+      <h2 style="display:flex;justify-content:space-between;align-items:center">
+        <span>📄 Uploaded PDFs</span>
+        <button class="btn btn-ghost" onclick="loadForms()" style="padding:7px 12px;font-size:12px">↻ Refresh</button>
+      </h2>
+      <div id="formsArea"><p class="muted">Loading…</p></div>
+    </div>
   </div>
+
 </div>
 
 <script>
@@ -128,6 +131,17 @@ function show(view){
   document.getElementById('loginView').classList.toggle('hidden', view!=='login');
   document.getElementById('dashView').classList.toggle('hidden', view!=='dash');
   document.getElementById('logoutBtn').classList.toggle('hidden', view!=='dash');
+  document.getElementById('tabs').classList.toggle('hidden', view!=='dash');
+}
+
+// Switch between the two dashboard pages: "upload" and "pdfs".
+function switchTab(tab){
+  const isUpload = tab==='upload';
+  document.getElementById('uploadView').classList.toggle('hidden', !isUpload);
+  document.getElementById('pdfsView').classList.toggle('hidden', isUpload);
+  document.getElementById('tabUpload').classList.toggle('active', isUpload);
+  document.getElementById('tabPdfs').classList.toggle('active', !isUpload);
+  if(!isUpload) loadForms();
 }
 
 async function login(){
@@ -152,6 +166,7 @@ function logout(){ TOKEN=''; localStorage.removeItem('admintoken'); show('login'
 
 async function enterDashboard(){
   show('dash');
+  switchTab('upload'); // start on the Admin upload page
   await loadCategories();
   await loadForms();
 }
@@ -182,10 +197,10 @@ async function addForm(){
   const btn = document.getElementById('addBtn');
   const file = document.getElementById('file').files[0];
   const title = document.getElementById('title').value.trim();
-  if(!file){ msg.className='msg err'; msg.textContent='Choose a PDF file.'; return; }
+  if(!file){ msg.className='msg err'; msg.textContent='Choose a PDF or Word file.'; return; }
   if(!title){ msg.className='msg err'; msg.textContent='Enter a title.'; return; }
 
-  btn.disabled=true; btn.textContent='Publishing…';
+  btn.disabled=true; btn.textContent='Uploading…';
   try{
     const categoryId = await ensureCategoryId();
     if(!categoryId) throw new Error('Pick or create a category.');
@@ -194,20 +209,20 @@ async function addForm(){
     fd.append('file', file);
     fd.append('title', title);
     fd.append('category', categoryId);
-    fd.append('formType', document.getElementById('formType').value);
     fd.append('description', document.getElementById('description').value.trim());
     fd.append('tags', JSON.stringify(tags));
     const res = await fetch(API+'/api/forms', {method:'POST', headers:{'Authorization':'Bearer '+TOKEN}, body:fd});
     const json = await res.json();
     if(!json.success){ if(res.status===401){ logout(); } throw new Error(json.message || 'Publish failed'); }
-    msg.className='msg ok'; msg.textContent='✓ Published: '+json.data.title;
+    msg.className='msg ok'; msg.textContent='✓ Uploaded: '+json.data.title+' (saved as PDF)';
     // reset
     document.getElementById('file').value=''; document.getElementById('title').value='';
     document.getElementById('description').value=''; document.getElementById('tags').value='';
     document.getElementById('newCategory').value='';
     await loadCategories(); await loadForms();
+    switchTab('pdfs'); // jump to the Uploaded PDFs page to show the new file
   }catch(e){ msg.className='msg err'; msg.textContent='⚠️ '+e.message; }
-  finally{ btn.disabled=false; btn.textContent='Publish form'; }
+  finally{ btn.disabled=false; btn.textContent='Upload & publish'; }
 }
 
 async function loadForms(){
@@ -218,15 +233,15 @@ async function loadForms(){
     const json = await res.json();
     const forms = json.data || [];
     if(!forms.length){ area.innerHTML='<p class="muted">No forms yet.</p>'; return; }
-    area.innerHTML = '<table><thead><tr><th>Title</th><th>Category</th><th>Tags</th><th>Status</th><th>File</th><th></th></tr></thead><tbody>'
+    area.innerHTML = '<table><thead><tr><th>Title</th><th>Category</th><th>Source file</th><th>Status</th><th>PDF</th><th></th></tr></thead><tbody>'
       + forms.map(f=>{
         const cat = f.category && f.category.name ? esc(f.category.name) : '—';
-        const tags = (f.tags||[]).map(t=>'<span class="tag">'+esc(t)+'</span>').join('') || '—';
+        const src = f.originalFileName ? esc(f.originalFileName) : '—';
         const status = f.isActive ? '<span class="pill on">active</span>' : '<span class="pill off">inactive</span>';
-        const file = f.fileUrl ? '<a class="filelink" href="'+esc(f.fileUrl)+'" target="_blank">open</a>' : '—';
+        const file = f.fileUrl ? '<a class="filelink" href="'+esc(f.fileUrl)+'" target="_blank">📄 View PDF</a>' : '—';
         return '<tr>'
           + '<td><strong>'+esc(f.title)+'</strong><div class="muted">'+esc(f.description||'')+'</div></td>'
-          + '<td>'+cat+'</td><td>'+tags+'</td><td>'+status+'</td><td>'+file+'</td>'
+          + '<td>'+cat+'</td><td class="muted">'+src+'</td><td>'+status+'</td><td>'+file+'</td>'
           + '<td><button class="btn-danger" onclick="delForm(\''+f._id+'\',\''+esc(f.title).replace(/\\\'/g,"")+'\')">Delete</button></td>'
           + '</tr>';
       }).join('') + '</tbody></table>';

@@ -3,6 +3,7 @@ const Application = require('../models/Application');
 const asyncHandler = require('../utils/asyncHandler');
 const slugify = require('../utils/slugify');
 const { uploadBuffer, deleteFile } = require('../utils/gridfs');
+const { toPdf } = require('../utils/convert');
 
 exports.list = asyncHandler(async (req, res) => {
   const { category, search, page = '1', limit = '20' } = req.query;
@@ -32,7 +33,9 @@ exports.create = asyncHandler(async (req, res) => {
   let fileUrl = '';
   let fileId = null;
   if (req.file) {
-    fileId = await uploadBuffer(req.file.buffer, req.file.originalname, req.file.mimetype);
+    // Word documents are converted to PDF; PDFs pass through untouched.
+    const pdf = await toPdf(req.file);
+    fileId = await uploadBuffer(pdf.buffer, pdf.filename, pdf.mimetype);
     fileUrl = `/api/files/${fileId}`;
   }
   const item = await FormTemplate.create({
@@ -56,7 +59,8 @@ exports.update = asyncHandler(async (req, res) => {
   if (req.body.title && !req.body.slug) item.slug = slugify(req.body.title);
   if (req.file) {
     const oldFileId = item.fileId;
-    const newFileId = await uploadBuffer(req.file.buffer, req.file.originalname, req.file.mimetype);
+    const pdf = await toPdf(req.file); // convert Word docs to PDF; PDFs pass through
+    const newFileId = await uploadBuffer(pdf.buffer, pdf.filename, pdf.mimetype);
     item.fileId = newFileId;
     item.fileUrl = `/api/files/${newFileId}`;
     item.originalFileName = req.file.originalname;
